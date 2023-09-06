@@ -266,7 +266,7 @@ func processCalls(threadId int) {
 
 			XMLAttachmentSearch, xmlmcErr := localLink.Invoke("data", "entityAttachBrowse")
 			if xmlmcErr != nil {
-				logger(4, "Unable to find attachments: for: "+requestID+" - "+fmt.Sprintf("%v", xmlmcErr), false)
+				logger(4, "Unable to find attachments for: "+requestID+" - "+fmt.Sprintf("%v", xmlmcErr), false)
 				continue
 			}
 
@@ -294,123 +294,143 @@ func processCalls(threadId int) {
 
 				var downloadedFiles []string
 
-				newZipFile, err := os.Create(globalAttachmentLocation + string(os.PathSeparator) + requestID + "_" + globalTimeNow + ".zip")
-				if err != nil {
-					logger(4, "Unable to open .ZIP file for: "+requestID+" - "+fmt.Sprintf("%v", err), false)
-					continue
-				}
-				//defer newZipFile.Close()
-				zipWriter := zip.NewWriter(newZipFile)
-				//defer zipWriter.Close()
+				strFileList := ""
 
-				strFileList := "Files archived on " + globalNiceTime + ":\r\n"
+				if configDoNotArchiveFiles {
 
-				for i := 0; i < intCountDownloads; i++ {
+					strFileList = "Files removed on " + globalNiceTime + ":\r\n"
 
-					//20200910 strContentLocation := xmlQuestionRespon.Params.RowData.Row[i].HContentLocation
-					strFileName := xmlQuestionRespon.Params.File[i].File.HFileName
-					strAccessToken := xmlQuestionRespon.Params.File[i].AccessToken
-					//fmt.Println(strContentLocation)
-					var emptyCatch []byte
-
-					time.Sleep(time.Millisecond * time.Duration(rand.Intn(2000))) //think this might be necessary
-
-					//strDAVurl := strDAVURL + strContentLocation
-					//20200910 strDAVurl := localLink.DavEndpoint + strContentLocation
-					strDAVurl := localLink.DavEndpoint
-					//logger(1, strDAVurl, true)
-					//					strDAVurl = strings.Replace(strDAVurl, "/dav/", "/php/", 1)
-					//change zone to live
-					//					re := regexp.MustCompile(`(.*)\.hornbill\.com`)
-					//					strDAVurl = re.ReplaceAllString(strDAVurl, "https://live.hornbill.com")
-					//					strDAVurl = strDAVurl + "attachment.php?application=com.hornbill.servicemanager&entity=Requests&key=" + requestID + "&filepath=" + url.QueryEscape(strFileName) + "&secure=true"
-					//strDAVurl = strDAVurl + "secure-content/download/" + strFileName
-					strDAVurl = strDAVurl + "secure-content/download/" + strAccessToken
-					logger(1, "GETting: "+strFileName, false)
-					//logger(1, strings.Replace(strFileName, "\n", "NEWLINE", 1), true)
-					//logger(1, strings.Replace(strFileName, "\r", "CARRIAGE RETURN", 1), true)
-
-					putbody := bytes.NewReader(emptyCatch)
-					req, Perr := http.NewRequest("GET", strDAVurl, putbody)
-					if Perr != nil {
-						logger(3, "GET set-up issue", false)
-						continue
-					}
-					req.Header.Add("Authorization", "ESP-APIKEY "+localAPIKey) //APIKey)
-					req.Header.Set("User-Agent", "Go-http-client/1.1")
-					response, Perr := client.Do(req)
-					if Perr != nil {
-						logger(3, "GET connection issue: "+fmt.Sprintf("%v", http.StatusInternalServerError), false)
-						continue
+					for i := 0; i < intCountDownloads; i++ {
+						strFileName := xmlQuestionRespon.Params.File[i].File.HFileName
+						strFileList += "\r\n" + strFileName
+						downloadedFiles = append(downloadedFiles, strFileName)
+						localBar.Increment()
 					}
 
-					//Sanitizing filename - for use in .zip
-					strFileName = strings.ReplaceAll(strFileName, "\n", "") // as NewLine characters appear to have creeped into the file name (my guess: email header not being sanitized)
-					strFileName = strings.ReplaceAll(strFileName, "\r", "") // better safe than sorry
-					strFileName = strings.ReplaceAll(strFileName, "*", "")
-					strFileName = strings.ReplaceAll(strFileName, "?", "")
-					strFileName = strings.ReplaceAll(strFileName, "\\", "_")
-					strFileName = strings.ReplaceAll(strFileName, "/", "_")
-					strFileName = strings.ReplaceAll(strFileName, ":", "_")
-					strFileName = strings.ReplaceAll(strFileName, "|", "_")
-					strFileName = strings.ReplaceAll(strFileName, ">", "_")
-					strFileName = strings.ReplaceAll(strFileName, "<", "_")
+				} else {
 
-					//logger(3, fmt.Sprintf("Received data: %d bytes", response.ContentLength), false) //- content length was -1 (known Go issue)
+					newZipFile, err := os.Create(globalAttachmentLocation + string(os.PathSeparator) + requestID + "_" + globalTimeNow + ".zip")
+					if err != nil {
+						logger(4, "Unable to open .ZIP file for: "+requestID+" - "+fmt.Sprintf("%v", err), false)
+						continue
+					}
+					//defer newZipFile.Close()
+					zipWriter := zip.NewWriter(newZipFile)
+					//defer zipWriter.Close()
 
-					//defer response.Body.Close()
-					//_, _ = io.Copy(ioutil.Discard, response.Body)
-					if response.StatusCode == 200 {
-						header := &zip.FileHeader{
-							//Name:   xmlQuestionRespon.Params.File[i].File.HFileName,
-							Name:   strFileName,
-							Method: zip.Deflate,
+					strFileList = "Files archived on " + globalNiceTime + ":\r\n"
+
+					for i := 0; i < intCountDownloads; i++ {
+
+						//20200910 strContentLocation := xmlQuestionRespon.Params.RowData.Row[i].HContentLocation
+						strFileName := xmlQuestionRespon.Params.File[i].File.HFileName
+						strAccessToken := xmlQuestionRespon.Params.File[i].AccessToken
+						//fmt.Println(strContentLocation)
+						var emptyCatch []byte
+
+						time.Sleep(time.Millisecond * time.Duration(rand.Intn(2000))) //think this might be necessary
+
+						//strDAVurl := strDAVURL + strContentLocation
+						//20200910 strDAVurl := localLink.DavEndpoint + strContentLocation
+						strDAVurl := localLink.DavEndpoint
+						//logger(1, strDAVurl, true)
+						//					strDAVurl = strings.Replace(strDAVurl, "/dav/", "/php/", 1)
+						//change zone to live
+						//					re := regexp.MustCompile(`(.*)\.hornbill\.com`)
+						//					strDAVurl = re.ReplaceAllString(strDAVurl, "https://live.hornbill.com")
+						//					strDAVurl = strDAVurl + "attachment.php?application=com.hornbill.servicemanager&entity=Requests&key=" + requestID + "&filepath=" + url.QueryEscape(strFileName) + "&secure=true"
+						//strDAVurl = strDAVurl + "secure-content/download/" + strFileName
+						strDAVurl = strDAVurl + "secure-content/download/" + strAccessToken
+						logger(1, "GETting: "+strFileName, false)
+						//logger(1, strings.Replace(strFileName, "\n", "NEWLINE", 1), true)
+						//logger(1, strings.Replace(strFileName, "\r", "CARRIAGE RETURN", 1), true)
+
+						putbody := bytes.NewReader(emptyCatch)
+						req, Perr := http.NewRequest("GET", strDAVurl, putbody)
+						if Perr != nil {
+							logger(3, "GET set-up issue", false)
+							continue
+						}
+						req.Header.Add("Authorization", "ESP-APIKEY "+localAPIKey) //APIKey)
+						req.Header.Set("User-Agent", "Go-http-client/1.1")
+						response, Perr := client.Do(req)
+						if Perr != nil {
+							logger(3, "GET connection issue: "+fmt.Sprintf("%v", http.StatusInternalServerError), false)
+							continue
 						}
 
-						writer, err := zipWriter.CreateHeader(header)
-						if err != nil {
-							logger(1, "Zip Header Error: "+fmt.Sprintf("%v", err), false)
-							response.Body.Close()
-							continue
-						} else {
-							_, err = io.Copy(writer, response.Body)
+						//Sanitizing filename - for use in .zip
+						strFileName = strings.ReplaceAll(strFileName, "\n", "") // as NewLine characters appear to have creeped into the file name (my guess: email header not being sanitized)
+						strFileName = strings.ReplaceAll(strFileName, "\r", "") // better safe than sorry
+						strFileName = strings.ReplaceAll(strFileName, "*", "")
+						strFileName = strings.ReplaceAll(strFileName, "?", "")
+						strFileName = strings.ReplaceAll(strFileName, "\\", "_")
+						strFileName = strings.ReplaceAll(strFileName, "/", "_")
+						strFileName = strings.ReplaceAll(strFileName, ":", "_")
+						strFileName = strings.ReplaceAll(strFileName, "|", "_")
+						strFileName = strings.ReplaceAll(strFileName, ">", "_")
+						strFileName = strings.ReplaceAll(strFileName, "<", "_")
+
+						//logger(3, fmt.Sprintf("Received data: %d bytes", response.ContentLength), false) //- content length was -1 (known Go issue)
+
+						//defer response.Body.Close()
+						//_, _ = io.Copy(ioutil.Discard, response.Body)
+						if response.StatusCode == 200 {
+							header := &zip.FileHeader{
+								//Name:   xmlQuestionRespon.Params.File[i].File.HFileName,
+								Name:   strFileName,
+								Method: zip.Deflate,
+							}
+
+							writer, err := zipWriter.CreateHeader(header)
 							if err != nil {
-								logger(1, "io.Copy Error: "+fmt.Sprintf("%v", err), false)
+								logger(1, "Zip Header Error: "+fmt.Sprintf("%v", err), false)
 								response.Body.Close()
 								continue
+							} else {
+								_, err = io.Copy(writer, response.Body)
+								if err != nil {
+									logger(1, "io.Copy Error: "+fmt.Sprintf("%v", err), false)
+									response.Body.Close()
+									continue
+								}
 							}
+
+							strFileList += "\r\n" + xmlQuestionRespon.Params.File[i].File.HFileName
+							// yeah do NOT use sanitized filename here!
+							downloadedFiles = append(downloadedFiles, xmlQuestionRespon.Params.File[i].File.HFileName)
+
+						} else {
+							logger(1, "Unsuccesful Download: "+fmt.Sprintf("%v", response.StatusCode), false)
 						}
 
-						strFileList += "\r\n" + xmlQuestionRespon.Params.File[i].File.HFileName
-						// yeah do NOT use sanitized filename here!
-						downloadedFiles = append(downloadedFiles, xmlQuestionRespon.Params.File[i].File.HFileName)
+						err = response.Body.Close()
+						if err != nil {
+							logger(1, "Body Close Error: "+fmt.Sprintf("%v", err), false)
+						}
+						localBar.Increment()
 
-					} else {
-						logger(1, "Unsuccesful Download: "+fmt.Sprintf("%v", response.StatusCode), false)
 					}
 
-					err = response.Body.Close()
+					err = zipWriter.Close()
 					if err != nil {
-						logger(1, "Body Close Error: "+fmt.Sprintf("%v", err), false)
+						logger(1, "zipWriter Close Error: "+fmt.Sprintf("%v", err), false)
+						downloadedFiles = nil // better ensure we are not removing anything
 					}
-					localBar.Increment()
-
-				}
-
-				err = zipWriter.Close()
-				if err != nil {
-					logger(1, "zipWriter Close Error: "+fmt.Sprintf("%v", err), false)
-					downloadedFiles = nil // better ensure we are not removing anything
-				}
-				err = newZipFile.Close()
-				if err != nil {
-					logger(1, "newZipFile Close Error: "+fmt.Sprintf("%v", err), false)
-					downloadedFiles = nil // better ensure we are not removing anything
+					err = newZipFile.Close()
+					if err != nil {
+						logger(1, "newZipFile Close Error: "+fmt.Sprintf("%v", err), false)
+						downloadedFiles = nil // better ensure we are not removing anything
+					}
 				}
 
 				iDownloadedFiles := len(downloadedFiles)
 
-				logger(1, "Succesful Downloads: "+fmt.Sprintf("%d", iDownloadedFiles), false)
+				if configDoNotArchiveFiles {
+					logger(1, "Items lined up for removal: "+fmt.Sprintf("%d", iDownloadedFiles), false)
+				} else {
+					logger(1, "Succesful Downloads: "+fmt.Sprintf("%d", iDownloadedFiles), false)
+				}
 
 				if !(configDryRun) && iDownloadedFiles > 0 {
 					for i := 0; i < iDownloadedFiles; i++ {

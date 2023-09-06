@@ -54,6 +54,7 @@ func parseFlags() {
 	flag.IntVar(&configCutOff, "cutoff", globalDefaultCutOff, "Set the cut off date in weeks ("+strconv.Itoa(globalUltimateCutOff)+" or greater)")
 	flag.IntVar(&configPageSize, "pagesize", 100, "Set the Query Page Size (default: 100)")
 	flag.BoolVar(&configRequestUpdate, "updateRequest", false, "Set this to true to update the request with the log of syphoned off files")
+	flag.BoolVar(&configDoNotArchiveFiles, "DoNotArchiveFiles", false, "Set this to true to and the files will NOT be archived, BUT the files WILL be removed (if not dryrun)")
 	flag.BoolVar(&configOverride, "override", false, "Set this to true to override the "+strconv.Itoa(globalUltimateCutOff)+" week limit")
 	flag.StringVar(&configCall, "call", "", "Specify the Request ID")
 	flag.Parse()

@@ -26,6 +26,7 @@ var (
 	configDryRun             bool
 	configOverride           bool
 	configRequestUpdate      bool
+	configDoNotArchiveFiles  bool
 	configOutputFolder       string
 	configCutOff             int
 	configCall               = ""
