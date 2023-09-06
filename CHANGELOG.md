@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 1.2.0 (September 6th, 2023)
+
+Features:
+
+- Ability to skip the archiving of the attachments in the .zip file - i.e. file REMOVAL WITHOUT ARCHIVING (use -DoNotArchiveFiles command line flag).
+
 ## 1.1.0 (September 6th, 2023)
 
 Features:
