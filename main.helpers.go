@@ -12,7 +12,7 @@ import (
 	"github.com/hornbill/goHornbillHelpers"
 )
 
-//loadConfig -- Function to Load Configruation File
+// loadConfig -- Function to Load Configruation File
 func loadConfig() (importConfStruct, bool) {
 	boolLoadConf := true
 	//-- Check Config File File Exists
@@ -46,13 +46,14 @@ func loadConfig() (importConfStruct, bool) {
 	return edbConf, boolLoadConf
 }
 
-//parseFlags - grabs and parses command line flags
+// parseFlags - grabs and parses command line flags
 func parseFlags() {
 	flag.StringVar(&configFileName, "file", "conf.json", "Name of the configuration file to load")
 	flag.StringVar(&configOutputFolder, "output", "", "Folder to store downloads in - overrides AttachmentFolder from the conf.json")
 	flag.BoolVar(&configDryRun, "dryrun", false, "Do not delete the files from the server")
 	flag.IntVar(&configCutOff, "cutoff", globalDefaultCutOff, "Set the cut off date in weeks ("+strconv.Itoa(globalUltimateCutOff)+" or greater)")
 	flag.IntVar(&configPageSize, "pagesize", 100, "Set the Query Page Size (default: 100)")
+	flag.BoolVar(&configRequestUpdate, "updateRequest", false, "Set this to true to update the request with the log of syphoned off files")
 	flag.BoolVar(&configOverride, "override", false, "Set this to true to override the "+strconv.Itoa(globalUltimateCutOff)+" week limit")
 	flag.StringVar(&configCall, "call", "", "Specify the Request ID")
 	flag.Parse()

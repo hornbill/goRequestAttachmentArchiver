@@ -21,61 +21,6 @@ import (
 	"time"
 )
 
-type stateStruct struct {
-	Code     string `xml:"code"`
-	ErrorRet string `xml:"error"`
-}
-type HBResults struct {
-	HID              int    `xml:"h_pk_id"`
-	HReqID           string `xml:"h_request_id"`
-	HContentLocation string `xml:"h_contentlocation"`
-	HFileName        string `xml:"h_filename"`
-	HSize            int    `xml:"h_size"`
-	HTimeStamp       string `xml:"h_timestamp"`
-	HVisibility      string `xml:"h_visibility"`
-	HCount           string `xml:"h_count"`
-	HOwnerKey        string `xml:"h_owner_key"`
-}
-
-type fileResults struct {
-	File struct {
-		HFileID     int    `xml:"fileId"`
-		HFileSource string `xml:"fileSource"`
-		HFileName   string `xml:"fileName"`
-		HSize       int    `xml:"fileSize"`
-		HTimeStamp  string `xml:"timeStamp"`
-	} `xml:"fileInfo"`
-	AccessToken string `xml:"accessToken"`
-}
-
-type structQueryResults struct {
-	MethodResult string `xml:"status,attr"`
-	Params       struct {
-		RowData struct {
-			Row []HBResults `xml:"row"`
-		} `xml:"rowData"`
-	} `xml:"params"`
-	State stateStruct `xml:"state"`
-}
-type xmlmcCountResponse struct {
-	Params struct {
-		RowData struct {
-			Row []struct {
-				Count string `xml:"h_count"`
-			} `xml:"row"`
-		} `xml:"rowData"`
-	} `xml:"params"`
-	State stateStruct `xml:"state"`
-}
-
-type structAttachmentsResults struct {
-	MethodResult string `xml:"status,attr"`
-	Params       struct {
-		File []fileResults `xml:"file"`
-	} `xml:"params"`
-	State stateStruct `xml:"state"`
-}
-
 func populateRequestsArray() {
 
 	if configCall != "" {
@@ -97,6 +42,11 @@ func populateRequestsArray() {
 	espXmlmc.SetParam("queryName", "adm_getOldRequestsWithAttachments")
 	espXmlmc.OpenElement("queryParams")
 	espXmlmc.SetParam("cut_off_date", cut_off_date)
+
+	for _, serviceId := range importConf.Services {
+		espXmlmc.SetParam("serviceId", strconv.Itoa(serviceId))
+	}
+
 	espXmlmc.CloseElement("queryParams")
 	espXmlmc.OpenElement("queryOptions")
 	espXmlmc.SetParam("resultType", "count")
@@ -140,6 +90,9 @@ func populateRequestsArray() {
 		espXmlmc.SetParam("queryName", "adm_getOldRequestsWithAttachments")
 		espXmlmc.OpenElement("queryParams")
 		espXmlmc.SetParam("cut_off_date", cut_off_date)
+		for _, serviceId := range importConf.Services {
+			espXmlmc.SetParam("serviceId", strconv.Itoa(serviceId))
+		}
 		espXmlmc.SetParam("rowstart", strconv.FormatUint(loopCount, 10))
 		espXmlmc.SetParam("limit", strconv.Itoa(configPageSize))
 		espXmlmc.CloseElement("queryParams")
@@ -285,8 +238,8 @@ func setOutputFolder() {
 
 }
 
-//func processCalls(localLink *apiLib.XmlmcInstStruct) (){
-//func processCalls(threadId int, arrayPB []*pb.ProgressBar) (){
+// func processCalls(localLink *apiLib.XmlmcInstStruct) (){
+// func processCalls(threadId int, arrayPB []*pb.ProgressBar) (){
 func processCalls(threadId int) {
 
 	localAPIKey := globalAPIKeys[threadId]
@@ -349,6 +302,8 @@ func processCalls(threadId int) {
 				//defer newZipFile.Close()
 				zipWriter := zip.NewWriter(newZipFile)
 				//defer zipWriter.Close()
+
+				strFileList := "Files archived on " + globalNiceTime + ":\r\n"
 
 				for i := 0; i < intCountDownloads; i++ {
 
@@ -426,6 +381,7 @@ func processCalls(threadId int) {
 							}
 						}
 
+						strFileList += "\r\n" + xmlQuestionRespon.Params.File[i].File.HFileName
 						// yeah do NOT use sanitized filename here!
 						downloadedFiles = append(downloadedFiles, xmlQuestionRespon.Params.File[i].File.HFileName)
 
@@ -456,7 +412,7 @@ func processCalls(threadId int) {
 
 				logger(1, "Succesful Downloads: "+fmt.Sprintf("%d", iDownloadedFiles), false)
 
-				if !(configDryRun) && len(downloadedFiles) > 0 {
+				if !(configDryRun) && iDownloadedFiles > 0 {
 					for i := 0; i < iDownloadedFiles; i++ {
 						logger(3, "Removal of "+downloadedFiles[i]+" from "+requestID, false)
 						//we've got the file, so now let's remove from source:
@@ -470,6 +426,19 @@ func processCalls(threadId int) {
 							//need to decide what to do if unable to remove attachment - it might be because it didn't exist in the first place
 						} else {
 							logger(1, "Processed: "+downloadedFiles[i]+" for "+requestID, false)
+						}
+					}
+					//update call with strFileList
+					if configRequestUpdate {
+						localLink.SetParam("requestId", requestID)
+						localLink.SetParam("content", strFileList)
+						localLink.SetParam("visibility", "colleague")
+						localLink.SetParam("activityType", "Archiver")
+						localLink.SetParam("skipBpm", "true")
+						_, xmlmcErr := localLink.Invoke("apps/com.hornbill.servicemanager/Requests", "updateReqTimeline")
+						if xmlmcErr != nil {
+							logger(4, "Unable to Update "+requestID, false)
+							//need to decide what to do if unable to remove attachment - it might be because it didn't exist in the first place
 						}
 					}
 				} else {
@@ -491,6 +460,10 @@ func main() {
 	startTime = time.Now()
 	//-- Start Time for Log File
 	globalTimeNow = time.Now().Format(time.RFC3339)
+
+	globalNiceTime = globalTimeNow[:16]
+	globalNiceTime = strings.Replace(globalNiceTime, "T", " ", 1)
+
 	globalTimeNow = strings.Replace(globalTimeNow, ":", "-", -1)
 	localLogFileName += globalTimeNow
 	localLogFileName += ".log"

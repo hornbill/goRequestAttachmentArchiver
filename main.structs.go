@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	version              = "1.0.0"
+	version              = "1.1.0"
 	applicationName      = "Hornbill Request Attachment Archiver"
 	appName              = "goRequestAttachmentArchiver"
 	execName             = "goRequestAttachmentArchiver"
@@ -25,6 +25,7 @@ var (
 	configFileName           string
 	configDryRun             bool
 	configOverride           bool
+	configRequestUpdate      bool
 	configOutputFolder       string
 	configCutOff             int
 	configCall               = ""
@@ -32,6 +33,7 @@ var (
 	globalMaxRoutines        int
 	globalAPIKeys            []string
 	globalTimeNow            string
+	globalNiceTime           string
 	globalAttachmentLocation = ""
 	importConf               importConfStruct
 	startTime                time.Time
@@ -60,9 +62,65 @@ var (
 	//globalArrayLinks     []*apiLib.XmlmcInstStruct
 )
 
-//----- Config Data Structs
+// ----- Config Data Structs
 type importConfStruct struct {
 	InstanceID       string
 	APIKeys          []string
 	AttachmentFolder string
+	Services         []int
+}
+
+type stateStruct struct {
+	Code     string `xml:"code"`
+	ErrorRet string `xml:"error"`
+}
+type HBResults struct {
+	HID              int    `xml:"h_pk_id"`
+	HReqID           string `xml:"h_request_id"`
+	HContentLocation string `xml:"h_contentlocation"`
+	HFileName        string `xml:"h_filename"`
+	HSize            int    `xml:"h_size"`
+	HTimeStamp       string `xml:"h_timestamp"`
+	HVisibility      string `xml:"h_visibility"`
+	HCount           string `xml:"h_count"`
+	HOwnerKey        string `xml:"h_owner_key"`
+}
+
+type fileResults struct {
+	File struct {
+		HFileID     int    `xml:"fileId"`
+		HFileSource string `xml:"fileSource"`
+		HFileName   string `xml:"fileName"`
+		HSize       int    `xml:"fileSize"`
+		HTimeStamp  string `xml:"timeStamp"`
+	} `xml:"fileInfo"`
+	AccessToken string `xml:"accessToken"`
+}
+
+type structQueryResults struct {
+	MethodResult string `xml:"status,attr"`
+	Params       struct {
+		RowData struct {
+			Row []HBResults `xml:"row"`
+		} `xml:"rowData"`
+	} `xml:"params"`
+	State stateStruct `xml:"state"`
+}
+type xmlmcCountResponse struct {
+	Params struct {
+		RowData struct {
+			Row []struct {
+				Count string `xml:"h_count"`
+			} `xml:"row"`
+		} `xml:"rowData"`
+	} `xml:"params"`
+	State stateStruct `xml:"state"`
+}
+
+type structAttachmentsResults struct {
+	MethodResult string `xml:"status,attr"`
+	Params       struct {
+		File []fileResults `xml:"file"`
+	} `xml:"params"`
+	State stateStruct `xml:"state"`
 }
