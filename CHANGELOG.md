@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 1.2.1 (September 25th, 2024)
+
+Fixes:
+
+- Modification to account for change of naming convention within API - functionality remains the same
+
+
 ## 1.2.0 (September 6th, 2023)
 
 Features:

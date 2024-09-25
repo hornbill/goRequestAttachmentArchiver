@@ -39,7 +39,7 @@ func populateRequestsArray() {
 
 	///////////////////
 	espXmlmc.SetParam("application", "com.hornbill.servicemanager")
-	espXmlmc.SetParam("queryName", "adm_getOldRequestsWithAttachments")
+	espXmlmc.SetParam("queryName", "externalUtility_getOldRequestsWithAttachments")
 	espXmlmc.OpenElement("queryParams")
 	espXmlmc.SetParam("cut_off_date", cut_off_date)
 

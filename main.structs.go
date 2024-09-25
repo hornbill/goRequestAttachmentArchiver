@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	version              = "1.2.0"
+	version              = "1.2.1"
 	applicationName      = "Hornbill Request Attachment Archiver"
 	appName              = "goRequestAttachmentArchiver"
 	execName             = "goRequestAttachmentArchiver"
