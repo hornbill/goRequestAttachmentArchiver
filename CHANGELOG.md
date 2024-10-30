@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 1.2.2 (October 30th, 2024)
+
+Fixes:
+
+- fix to code implemented in v1.2.1
+
 ## 1.2.1 (September 25th, 2024)
 
 Fixes:

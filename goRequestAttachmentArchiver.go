@@ -87,7 +87,7 @@ func populateRequestsArray() {
 		logger(1, "Loading Request Attachment List Offset: "+fmt.Sprintf("%d", loopCount)+"\n", false)
 
 		espXmlmc.SetParam("application", "com.hornbill.servicemanager")
-		espXmlmc.SetParam("queryName", "adm_getOldRequestsWithAttachments")
+		espXmlmc.SetParam("queryName", "externalUtility_getOldRequestsWithAttachments")
 		espXmlmc.OpenElement("queryParams")
 		espXmlmc.SetParam("cut_off_date", cut_off_date)
 		for _, serviceId := range importConf.Services {
