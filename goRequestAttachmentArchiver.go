@@ -47,6 +47,10 @@ func populateRequestsArray() {
 		espXmlmc.SetParam("serviceId", strconv.Itoa(serviceId))
 	}
 
+	for _, status := range importConf.Statuses {
+		espXmlmc.SetParam("status", status)
+	}
+
 	espXmlmc.CloseElement("queryParams")
 	espXmlmc.OpenElement("queryOptions")
 	espXmlmc.SetParam("resultType", "count")
@@ -93,6 +97,9 @@ func populateRequestsArray() {
 		for _, serviceId := range importConf.Services {
 			espXmlmc.SetParam("serviceId", strconv.Itoa(serviceId))
 		}
+		for _, status := range importConf.Statuses {
+			espXmlmc.SetParam("status", status)
+		}
 		espXmlmc.SetParam("rowstart", strconv.FormatUint(loopCount, 10))
 		espXmlmc.SetParam("limit", strconv.Itoa(configPageSize))
 		espXmlmc.CloseElement("queryParams")
@@ -124,7 +131,6 @@ func populateRequestsArray() {
 			for i := 0; i < intResponseSize; i++ {
 				globalArrayRequests = append(globalArrayRequests, xmlQuestionRespon.Params.RowData.Row[i].HOwnerKey)
 			}
-			//###globalArrayRequests = globalArrayRequests[1:100]
 		}
 
 		// Add 100
@@ -183,7 +189,6 @@ func pickOffRequestArray() (bool, string) {
 		globalArrayRequests[len(globalArrayRequests)-1] = ""
 		globalArrayRequests = globalArrayRequests[:len(globalArrayRequests)-1]
 		mutex.Unlock()
-		//globalBarRequests.Increment()
 		globalArrayBars[0].Increment()
 	}
 	boolReturn = !(stringLastItem == "")
@@ -238,18 +243,13 @@ func setOutputFolder() {
 
 }
 
-// func processCalls(localLink *apiLib.XmlmcInstStruct) (){
-// func processCalls(threadId int, arrayPB []*pb.ProgressBar) (){
 func processCalls(threadId int) {
 
 	localAPIKey := globalAPIKeys[threadId]
 	localLink := NewEspXmlmcSession(localAPIKey)
-	//localBar := arrayPB[threadId]
 
 	localBar := globalArrayBars[threadId+1]
 
-	//localBar.Prefix("Thread " + strconv.Itoa(threadId) + ":")
-	//defer localBar.FinishPrint(" Completed")
 	for {
 		boolIDExists, requestID := pickOffRequestArray()
 
@@ -286,9 +286,6 @@ func processCalls(threadId int) {
 				}
 				logger(3, strconv.Itoa(intCountDownloads)+" downloads found for: "+requestID, false)
 
-				//				localBar.Total = int64(intCountDownloads)
-				//				localBar.Set(0)
-				//				localBar.Start()
 				localBar.Finish()
 				localBar.Reset(intCountDownloads)
 
@@ -314,9 +311,8 @@ func processCalls(threadId int) {
 						logger(4, "Unable to open .ZIP file for: "+requestID+" - "+fmt.Sprintf("%v", err), false)
 						continue
 					}
-					//defer newZipFile.Close()
+					
 					zipWriter := zip.NewWriter(newZipFile)
-					//defer zipWriter.Close()
 
 					strFileList = "Files archived on " + globalNiceTime + ":\r\n"
 
@@ -330,20 +326,9 @@ func processCalls(threadId int) {
 
 						time.Sleep(time.Millisecond * time.Duration(rand.Intn(2000))) //think this might be necessary
 
-						//strDAVurl := strDAVURL + strContentLocation
-						//20200910 strDAVurl := localLink.DavEndpoint + strContentLocation
 						strDAVurl := localLink.DavEndpoint
-						//logger(1, strDAVurl, true)
-						//					strDAVurl = strings.Replace(strDAVurl, "/dav/", "/php/", 1)
-						//change zone to live
-						//					re := regexp.MustCompile(`(.*)\.hornbill\.com`)
-						//					strDAVurl = re.ReplaceAllString(strDAVurl, "https://live.hornbill.com")
-						//					strDAVurl = strDAVurl + "attachment.php?application=com.hornbill.servicemanager&entity=Requests&key=" + requestID + "&filepath=" + url.QueryEscape(strFileName) + "&secure=true"
-						//strDAVurl = strDAVurl + "secure-content/download/" + strFileName
 						strDAVurl = strDAVurl + "secure-content/download/" + strAccessToken
 						logger(1, "GETting: "+strFileName, false)
-						//logger(1, strings.Replace(strFileName, "\n", "NEWLINE", 1), true)
-						//logger(1, strings.Replace(strFileName, "\r", "CARRIAGE RETURN", 1), true)
 
 						putbody := bytes.NewReader(emptyCatch)
 						req, Perr := http.NewRequest("GET", strDAVurl, putbody)
@@ -373,8 +358,6 @@ func processCalls(threadId int) {
 
 						//logger(3, fmt.Sprintf("Received data: %d bytes", response.ContentLength), false) //- content length was -1 (known Go issue)
 
-						//defer response.Body.Close()
-						//_, _ = io.Copy(ioutil.Discard, response.Body)
 						if response.StatusCode == 200 {
 							header := &zip.FileHeader{
 								//Name:   xmlQuestionRespon.Params.File[i].File.HFileName,
@@ -526,13 +509,9 @@ func main() {
 
 	if len(globalArrayRequests) > 0 {
 
-		//globalBarRequests = pb.StartNew(len(globalArrayRequests))
 		globalBarRequests = pb.New(len(globalArrayRequests)).Prefix("Overall :")
 
 		globalArrayBars = append(globalArrayBars, globalBarRequests)
-
-		//pool := pb.NewPool(globalBarRequests)
-		//var pool Pool
 
 		amount_per_bar := len(globalArrayRequests) / globalMaxRoutines
 		if amount_per_bar > 0 && globalMaxRoutines > 1 {
@@ -546,12 +525,10 @@ func main() {
 				ppp.ShowTimeLeft = false
 				ppp.ShowCounters = false
 				ppp.ShowFinalTime = false
-				//defer ppp.Finish()
-				//pool.Add(ppp)
 				globalArrayBars = append(globalArrayBars, ppp)
 			}
 			pool, err := pb.StartPool(globalArrayBars...)
-			//err := pool.Start()
+			
 			if err != nil {
 				panic(err)
 			}
@@ -564,9 +541,6 @@ func main() {
 			}
 			wg.Wait()
 
-			//globalBarRequests.FinishPrint("Utility Completed")
-			//globalBarRequests.Finish()
-			//globalArrayBars[0].Finish()
 			pool.Stop()
 
 		} else {
@@ -577,29 +551,14 @@ func main() {
 			globalArrayBars = append(globalArrayBars, ppp)
 			pool, err := pb.StartPool(globalArrayBars...)
 
-			//			err := pool.Start()
 			if err != nil {
 				panic(err)
 			}
 			processCalls(0)
 			globalArrayBars[0].Finish()
-			//globalBarRequests.Finish()
 			pool.Stop()
 
 		}
-		//globalBarRequests.Finish()
-		//pool.Stop()
-		/* - maintenance cleanup is unoptimised 09/07/2020
-		//force maintenance cleanup
-		localAPIKey := globalAPIKeys[0]
-		espXmlmc := NewEspXmlmcSession(localAPIKey)
-		_, xmlmcErr := espXmlmc.Invoke("data", "entityAttachCleanup")
-		if xmlmcErr != nil {
-			logger(4, "Unable to trigger the clean-up service of the server - relax, it should kick in automatically tonight", false)
-		} else {
-			logger(2, "Triggered Attachment Clean Up", false)
-		}
-		*/
 	} else {
 		fmt.Println("No downloads found")
 	}
@@ -612,174 +571,3 @@ func main() {
 	logger(1, "---- Hornbill Request Attachment Download and Removal Complete ---- ", false)
 
 }
-
-/* test of progress bars
-func mainplaycheck() {
-	barMax := 60
-	// create bars
-	//mainBar := pb.StartNew(3 * barMax).Prefix("Main ")
-	mainBar := pb.New(3 * barMax).Prefix("Main ")
-	first := pb.New(barMax).Prefix("First ")
-	second := pb.New(barMax).Prefix("Second ")
-	third := pb.New(barMax).Prefix("Third ")
-	// start pool
-	pool, err := pb.StartPool(mainBar, first, second, third)
-	if err != nil {
-		panic(err)
-	}
-	// update bars
-	wg := new(sync.WaitGroup)
-	for _, bar := range []*pb.ProgressBar{first, second, third} {
-		wg.Add(1)
-		go func(cb *pb.ProgressBar) {
-			//cb.Total = barMax
-			for n := 0; n < barMax; n++ {
-				cb.Increment()
-				mainBar.Increment()
-				time.Sleep(time.Millisecond * time.Duration(rand.Intn(1000)))
-				//		if (rand.Intn(100) < 50) {
-				//			cb.Total = 400
-				//			if (rand.Intn(100) < 10) {
-				//				cb.Set(0)
-				//			}
-				//		}
-			}
-			cb.Finish()
-			wg.Done()
-		}(bar)
-	}
-	wg.Wait()
-
-	mainBar.Finish()
-	// close pool
-	pool.Stop()
-}
-*/
-//NOTES
-
-//[]byte(XMLSiteSearch)
-//	fmt.Println(XMLSiteSearch)
-
-/*
-
-	<methodCall service="data" method="queryExec">
-	<params>
-	<application>com.hornbill.servicemanager</application>
-	<queryName>getRequestAttachments</queryName>
-	<queryParams>
-	<requestId>IN00000014</requestId>
-	</queryParams>
-	<queryOptions>
-	<resultType>allData</resultType>
-	</queryOptions>
-	</params>
-	</methodCall>
-
-			<rowData>
-				<row>
-					<h_pk_id>3</h_pk_id>
-					<h_request_id>IN00000014</h_request_id>
-					<h_contentlocation>/cafs_raw/fs_entity/9e7ccd808d13ce4c2825f3cfcb38c444ed7118ed.data</h_contentlocation>
-					<h_filename>8_minute_world_map_gray.pdf</h_filename>
-					<h_size>6397065</h_size>
-					<h_timestamp>2019-05-15 11:21:57Z</h_timestamp>
-					<h_visibility>trustedGuest</h_visibility>
-				</row>
-
-
-	<methodCall service="data" method="entityAttachRemove">
-		<params>
-	       <application>com.hornbill.servicemanager</application>
-			<entity>Requests</entity>
-			<keyValue>IN00000014</keyValue>
-			<filePath>8_minute_world_map_gray_3.pdf</filePath>
-		</params>
-	</methodCall>
-
-		<methodCall service="data" method="entityAttachCleanup">
-	</methodCall>
-*/
-
-/*
-		// get binary to upload via WEBDAV and then set value to relative "session" URI
-		client := http.Client{
-			Transport: &http.Transport{
-				Proxy: http.ProxyFromEnvironment,
-			},
-			Timeout: time.Duration(10 * time.Second),
-		}
-
-		rel_link := "session/" + UserID
-		strDAVurl := ldapImportConf.DAVURL + rel_link
-
-		var imageB []byte
-		var Berr error
-
-			resp, err := http.Get(strFileName)
-			if err != nil {
-				logger(4, "Unable to find "+value+" ["+fmt.Sprintf("%v", http.StatusInternalServerError)+"]", false)
-				return
-			}
-			defer resp.Body.Close()
-			if resp.StatusCode == 201 || resp.StatusCode == 200 {
-				imageB, _ = ioutil.ReadAll(resp.Body)
-
-			} else {
-				logger(4, "Unsuccesful download: "+fmt.Sprintf("%v", resp.StatusCode), false)
-				return
-			}
-
-		}
-		//WebDAV upload
-		if len(imageB) > 0 {
-			putbody := bytes.NewReader(imageB)
-			req, Perr := http.NewRequest("PUT", strDAVurl, putbody)
-			req.Header.Set("Content-Type", strContentType)
-			req.Header.Add("Authorization", "ESP-APIKEY "+APIKey)
-			req.Header.Set("User-Agent", "Go-http-client/1.1")
-			response, Perr := client.Do(req)
-			if Perr != nil {
-				logger(4, "PUT connection issue: "+fmt.Sprintf("%v", http.StatusInternalServerError), false)
-				return
-			}
-			defer response.Body.Close()
-			_, _ = io.Copy(ioutil.Discard, response.Body)
-			if response.StatusCode == 201 || response.StatusCode == 200 {
-				fmt.Println("Uploaded")
-				value = "/" + rel_link
-			} else {
-				fmt.Println("Unsuccesful Upload: "+fmt.Sprintf("%v", response.StatusCode))
-				return
-			}
-		} else {
-			fmt.Println("No Image to upload")
-			return
-		}
-	}
-*/
-
-/* Re-Attach Files
-espXmlmc := apiLib.NewXmlmcInstance(strURL)
-espXmlmc.SetAPIKey(APIKey)
-
-	espXmlmc.SetParam("application", "com.hornbill.servicemanager")
-	espXmlmc.SetParam("entity", "Requests")
-	espXmlmc.SetParam("keyValue", "IN00000012")
-
-	//espXmlmc.SetParam("folder", "")
-	espXmlmc.OpenElement("localFile")
-		espXmlmc.SetParam("fileName", strFileName)
-		espXmlmc.SetParam("fileData", "dGhpcyBpcyBmdW4=")
-	espXmlmc.CloseElement("localFile")
-	//espXmlmc.SetParam("serverFile", "")
-	// espXmlmc.SetParam("overwrite", "")
-
-
-XMLSiteSearch, xmlmcErr := espXmlmc.Invoke("data", "entityAttachFile")
-if xmlmcErr != nil {
-	log.Fatal(xmlmcErr)
-	fmt.Println("Unable to associate Image to User Profile: "+fmt.Sprintf("%v", xmlmcErr))
-}
-//[]byte(XMLSiteSearch)
-fmt.Println(XMLSiteSearch)
-*/

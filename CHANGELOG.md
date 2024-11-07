@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 1.3.0 (November 4th, 2024)
+
+Features:
+
+- Addition of filtering by Status (Statuses-Array of strings within configuration file (eg: ["status.cancelled","status.closed"] to only syphon off from cancelled/closed requests)). Please note NOT giving ANY Statuses will (still) result in ALL applicable requests.
+
 ## 1.2.2 (October 30th, 2024)
 
 Fixes:

@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	version              = "1.2.2"
+	version              = "1.3.0"
 	applicationName      = "Hornbill Request Attachment Archiver"
 	appName              = "goRequestAttachmentArchiver"
 	execName             = "goRequestAttachmentArchiver"
@@ -69,6 +69,7 @@ type importConfStruct struct {
 	APIKeys          []string
 	AttachmentFolder string
 	Services         []int
+	Statuses         []string
 }
 
 type stateStruct struct {
