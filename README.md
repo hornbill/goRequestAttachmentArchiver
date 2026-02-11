@@ -1,3 +1,3 @@
 ### Request Attachment Archiver Go - [GO](https://golang.org/) Archive File Attachment to Requests
 
-Please see [Request Attachment Archiver](https://wiki.hornbill.com/index.php?title=Request_Attachment_Archiver) for instructions.
+Please see [Request Attachment Archiver](https://docs.hornbill.com/hornbill-utilities/request-attachment-archiver) for instructions and CHANGELOG.md for latest updates.
