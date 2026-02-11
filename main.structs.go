@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	version              = "1.3.0"
+	version              = "1.4.0"
 	applicationName      = "Hornbill Request Attachment Archiver"
 	appName              = "goRequestAttachmentArchiver"
 	execName             = "goRequestAttachmentArchiver"
@@ -30,6 +30,7 @@ var (
 	configOutputFolder       string
 	configCutOff             int
 	configCall               = ""
+	gStrCSVList              = ""
 	configPageSize           = 100
 	globalMaxRoutines        int
 	globalAPIKeys            []string

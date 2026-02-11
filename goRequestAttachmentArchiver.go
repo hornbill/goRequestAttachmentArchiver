@@ -2,6 +2,7 @@ package main
 
 import (
 	"archive/zip"
+	"bufio"
 	"bytes"
 	_ "encoding/hex"
 	"encoding/xml"
@@ -24,8 +25,33 @@ import (
 func populateRequestsArray() {
 
 	if configCall != "" {
+
 		globalArrayRequests = append(globalArrayRequests, configCall)
 		return
+
+	} else if gStrCSVList != "" {
+
+		file, err := os.Open(gStrCSVList)
+		if err != nil {
+			logger(4, err.Error(), true)
+		}
+		defer file.Close()
+
+		scanner := bufio.NewScanner(file)
+
+		for scanner.Scan() {
+			clean := strings.Trim(scanner.Text(), "\"")
+			if clean != "" {
+				globalArrayRequests = append(globalArrayRequests, clean)
+			}
+		}
+
+		if err := scanner.Err(); err != nil {
+			logger(4, err.Error(), true)
+		}
+
+		return
+
 	}
 
 	localAPIKey := globalAPIKeys[0]
@@ -311,7 +337,7 @@ func processCalls(threadId int) {
 						logger(4, "Unable to open .ZIP file for: "+requestID+" - "+fmt.Sprintf("%v", err), false)
 						continue
 					}
-					
+
 					zipWriter := zip.NewWriter(newZipFile)
 
 					strFileList = "Files archived on " + globalNiceTime + ":\r\n"
@@ -485,7 +511,7 @@ func main() {
 		logger(4, "Unable to load config, process closing.", true)
 		return
 	}
-	if configCall == "" {
+	if (configCall == "" && gStrCSVList != "") || (configCall != "" && gStrCSVList == "") {
 		if !(configOverride) && configCutOff < globalUltimateCutOff {
 			logger(4, "The cut off date is too short (must be >= 12 (weeks)), process closing.", true)
 			return
@@ -528,7 +554,7 @@ func main() {
 				globalArrayBars = append(globalArrayBars, ppp)
 			}
 			pool, err := pb.StartPool(globalArrayBars...)
-			
+
 			if err != nil {
 				panic(err)
 			}

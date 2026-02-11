@@ -57,6 +57,7 @@ func parseFlags() {
 	flag.BoolVar(&configDoNotArchiveFiles, "DoNotArchiveFiles", false, "Set this to true to and the files will NOT be archived, BUT the files WILL be removed (if not dryrun)")
 	flag.BoolVar(&configOverride, "override", false, "Set this to true to override the "+strconv.Itoa(globalUltimateCutOff)+" week limit")
 	flag.StringVar(&configCall, "call", "", "Specify the Request ID")
+	flag.StringVar(&gStrCSVList, "requestList", "", "File name of file containing list of Request IDs - one per line")
 	flag.Parse()
 }
 

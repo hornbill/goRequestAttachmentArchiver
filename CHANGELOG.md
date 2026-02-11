@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 1.4.0 (February 10th, 2026)
+
+Features:
+
+- Allow for processing multiple specific requests in CSV-ish file (using -requestList command line parameter; provide file name of file containing list of Request IDs - one per line)
+
+
 ## 1.3.0 (November 4th, 2024)
 
 Features:
